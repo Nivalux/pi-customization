@@ -63,7 +63,8 @@ console.log("fast exit returns before the max wait");
 	check("returned in under 3s", elapsed < 3000, `${elapsed}ms`);
 	check("status exited", result.details.status === "exited");
 	check("exit code 0", result.details.exitCode === 0);
-	check("tail captured", result.details.tail.includes("hi"));
+	check("tail captured", result.content[0].text.includes("hi"));
+	check("details carry no log copy", result.details.tail === undefined && result.details.command === undefined);
 	check("not an error", result.isError === false);
 }
 
@@ -81,6 +82,40 @@ console.log("output path is honoured");
 	const written = readFileSync(logPath, "utf8");
 	check("stdout captured", written.includes("to-stdout"));
 	check("stderr captured", written.includes("to-stderr"));
+}
+
+console.log("the returned tail is capped and says so");
+{
+	const few = await runWait.execute(
+		"t17",
+		{ command: "seq 1 5000", output: join(dir, "few.log"), maxWaitSec: 30 },
+		undefined,
+		undefined,
+		ctx,
+	);
+	check("line cap held", few.content[0].text.trimEnd().endsWith("5000"));
+	check("line cap cut the head", few.content[0].text.includes("above — full output"));
+	check("log kept everything", readFileSync(join(dir, "few.log"), "utf8").trimEnd().endsWith("5000"));
+
+	const wide = await runWait.execute(
+		"t18",
+		{ command: "awk 'BEGIN{for(i=0;i<300;i++){for(j=0;j<100;j++)printf \"w%d \",j; print \"\"}}'", output: join(dir, "wide.log"), maxWaitSec: 30, tailLines: 500 },
+		undefined,
+		undefined,
+		ctx,
+	);
+	check("byte cap under 4.6 KB", wide.content[0].text.length < 4600, String(wide.content[0].text.length));
+	check("byte cap kept the last line", wide.content[0].text.trimEnd().endsWith("w99"));
+	check("byte cap reported the cut", wide.content[0].text.includes("above — full output"));
+
+	const small = await runWait.execute(
+		"t19",
+		{ command: "echo one; echo two", output: join(dir, "small.log"), maxWaitSec: 30 },
+		undefined,
+		undefined,
+		ctx,
+	);
+	check("no marker when nothing was cut", !small.content[0].text.includes("above — full output"));
 }
 
 console.log("max wait returns with a resumable job");
@@ -125,7 +160,7 @@ console.log("wait_job waits out a short job");
 	const second = await waitJob.execute("t8", { job: first.details.job, maxWaitSec: 20 }, undefined, undefined, ctx);
 	check("second call saw exit", second.details.status === "exited");
 	check("second call returned early", Date.now() - started < 1900, `${Date.now() - started}ms`);
-	check("output visible on resume", second.details.tail.includes("done"));
+	check("output visible on resume", second.content[0].text.includes("done"));
 }
 
 console.log("readyPattern returns while the process keeps running");
@@ -188,7 +223,7 @@ console.log("listing and unknown ids");
 {
 	const list = await waitJob.execute("t14", { maxWaitSec: 1 }, undefined, undefined, ctx);
 	check("listing reported", list.details.listing === true);
-	check("listing is not empty", list.details.tail.includes("sleep"));
+	check("listing is not empty", list.content[0].text.includes("sleep"));
 	let message = "";
 	try {
 		await waitJob.execute("t15", { job: "zzzzzz" }, undefined, undefined, ctx);
@@ -202,11 +237,14 @@ console.log("renderers produce components");
 {
 	const result = await runWait.execute("t16", { command: "echo rendered", maxWaitSec: 5 }, undefined, undefined, ctx);
 	const call = runWait.renderCall({ command: "echo rendered", maxWaitSec: 5 }, theme, {});
-	const done = runWait.renderResult(result, { isPartial: false }, theme, {});
+	const done = runWait.renderResult(result, { isPartial: false, expanded: false }, theme, {});
+	const wide = runWait.renderResult(result, { isPartial: false, expanded: true }, theme, {});
 	const partial = runWait.renderResult(result, { isPartial: true }, theme, {});
 	const listCall = waitJob.renderCall({ job: "abc123" }, theme, {});
 	check("renderCall renders", call.render(60).length > 0);
 	check("renderResult renders", done.render(60).join("").includes("exit 0"));
+	check("collapsed render hides the log", !done.render(60).join("").includes("rendered"));
+	check("expanded render reads the log back", wide.render(60).join("").includes("rendered"));
 	check("partial renders", partial.render(60).join("").includes("running"));
 	check("wait_job call renders", listCall.render(60).join("").includes("abc123"));
 }

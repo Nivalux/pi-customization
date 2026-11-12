@@ -53,7 +53,7 @@ run_wait {
 | `env`          | no       | Extra environment variables, merged over the current ones.                                                                     |
 | `maxWaitSec`   | no       | Maximum wait. Default 60, cap 3600.                                                                                            |
 | `readyPattern` | no       | Regex tested against the output tail. On match the result returns immediately with `status: ready` and the process keeps running. |
-| `tailLines`    | no       | Lines of output in the result. Default 40.                                                                                     |
+| `tailLines`    | no       | Lines of output in the result. Default 40; the tail is also capped at 4 KB.                                                    |
 | `onTimeout`    | no       | `detach` (default: the process keeps running and `wait_job` can resume it) or `kill` (whole process tree).                      |
 
 The result carries status, exit code, elapsed time, pid, job id, log path and the output
@@ -80,6 +80,13 @@ id fell out of context.
   the log and the process stays alive. `wait_job { job, onTimeout: "kill" }` stops it again.
 - **Session teardown cleans up.** A `session_shutdown` handler kills anything still running when
   the session ends, so a dev server does not outlive it.
+- **The log is stored once.** The result text carries the tail, `details` carries metadata only,
+  and the TUI re-reads the log file when you expand the row. Nothing is copied into the session.
+- **The tail is capped, the log is not.** At most 40 lines and 4 KB come back, so a quiet-looking
+  result is not a command that printed nothing. When output was cut, the tail starts with
+  `[… 12.3 KB above — full output in the log]`. Do not pipe commands through `tail`,
+  `head`, or `grep` to save context: the tail is already capped, and the pipe shrinks the log too,
+  which is the copy that holds everything.
 - **Logs are never deleted.** `$TMPDIR/pi-run-wait/` grows one file per job per session.
 
 ## Development
@@ -87,7 +94,7 @@ id fell out of context.
 ```bash
 npm run link-modules    # link the pi packages into node_modules (types for tsc, jiti for the test)
 npm run typecheck       # tsc against the real pi declarations
-npm run test            # 39 checks: early exit, timeout, resume, readyPattern, process-tree kill, abort, renderers
+npm run test            # 49 checks: early exit, timeout, resume, readyPattern, process-tree kill, abort, tail caps, renderers
 ```
 
 The test loads the extension through jiti and calls `execute()` directly, with no model call
