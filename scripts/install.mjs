@@ -3,9 +3,9 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const source = fileURLToPath(new URL("../extensions/run-wait.ts", import.meta.url));
+const source = fileURLToPath(new URL("../extensions/jobs.ts", import.meta.url));
 const agentDir = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
-const target = join(agentDir, "extensions", "run-wait.ts");
+const target = join(agentDir, "extensions", "jobs.ts");
 
 if (process.argv.includes("--uninstall")) {
 	rmSync(target, { force: true });

@@ -1,12 +1,12 @@
 {
-	"name": "run-wait",
+	"name": "pi-jobs",
 	"private": true,
 	"type": "module",
 	"scripts": {
 		"link-modules": "node scripts/link-modules.mjs",
 		"install:extension": "node scripts/install.mjs",
 		"uninstall:extension": "node scripts/install.mjs --uninstall",
-		"test": "node test/run-wait.test.mjs",
+		"test": "node test/jobs.test.mjs",
 		"typecheck": "tsc -p tsconfig.json"
 	}
 }

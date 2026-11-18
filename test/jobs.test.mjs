@@ -9,7 +9,7 @@ const jiti = createJiti(import.meta.url, {
 	interopDefault: true,
 	alias: { "@earendil-works/pi-ai": piAi },
 });
-const module = await jiti.import("../extensions/run-wait.ts");
+const module = await jiti.import("../extensions/jobs.ts");
 
 const tools = new Map();
 const events = new Map();
@@ -18,10 +18,10 @@ module.default({
 	on: (event, handler) => events.set(event, handler),
 });
 
-const runWait = tools.get("run_wait");
-const waitJob = tools.get("wait_job");
+const runWait = tools.get("job_run");
+const waitJob = tools.get("job_wait");
 const ctx = { cwd: process.cwd() };
-const dir = mkdtempSync(join(tmpdir(), "run-wait-spec-"));
+const dir = mkdtempSync(join(tmpdir(), "pi-jobs-spec-"));
 
 let failures = 0;
 function check(name, condition, extra = "") {
@@ -134,7 +134,7 @@ console.log("max wait returns with a resumable job");
 	check("status running", result.details.status === "running");
 	check("outcome timeout", result.details.outcome === "timeout");
 	check("pid alive after detach", alive(result.details.pid));
-	check("result tells how to resume", result.content[0].text.includes("wait_job"));
+	check("result tells how to resume", result.content[0].text.includes("job_wait"));
 
 	const resumed = await waitJob.execute("t5", { job: result.details.job, maxWaitSec: 1 }, undefined, undefined, ctx);
 	check("resume reports same job", resumed.details.job === result.details.job);
@@ -152,7 +152,7 @@ console.log("max wait returns with a resumable job");
 	check("process gone after kill", !alive(result.details.pid));
 }
 
-console.log("wait_job waits out a short job");
+console.log("job_wait waits out a short job");
 {
 	const first = await runWait.execute("t7", { command: "sleep 2; echo done", maxWaitSec: 1 }, undefined, undefined, ctx);
 	check("first call detached", first.details.status === "running");
@@ -246,7 +246,7 @@ console.log("renderers produce components");
 	check("collapsed render hides the log", !done.render(60).join("").includes("rendered"));
 	check("expanded render reads the log back", wide.render(60).join("").includes("rendered"));
 	check("partial renders", partial.render(60).join("").includes("running"));
-	check("wait_job call renders", listCall.render(60).join("").includes("abc123"));
+	check("job_wait call renders", listCall.render(60).join("").includes("abc123"));
 }
 
 await events.get("session_shutdown")?.({}, ctx);

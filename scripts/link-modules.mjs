@@ -6,7 +6,7 @@ const PACKAGE_NAME = "@earendil-works/pi-coding-agent";
 const BIN_NAME = PACKAGE_NAME.slice(PACKAGE_NAME.lastIndexOf("/") + 1).split("-")[0];
 
 const root = dirname(dirname(realpathSync(new URL(import.meta.url))));
-const binPath = realpathSync(execFileSync("which", [process.env.RUN_WAIT_BIN ?? BIN_NAME], { encoding: "utf8" }).trim());
+const binPath = realpathSync(execFileSync("which", [process.env.PI_JOBS_BIN ?? BIN_NAME], { encoding: "utf8" }).trim());
 const prefix = dirname(dirname(binPath));
 
 function isPackage(dir) {
@@ -18,7 +18,7 @@ function isPackage(dir) {
 }
 
 const packageRoot = [
-	process.env.RUN_WAIT_PACKAGE_ROOT,
+	process.env.PI_JOBS_PACKAGE_ROOT,
 	prefix,
 	join(prefix, "lib/node_modules/pi-monorepo"),
 	join(prefix, "lib/node_modules", PACKAGE_NAME),
@@ -28,7 +28,7 @@ const packageRoot = [
 	.at(0);
 
 if (!packageRoot) {
-	console.error(`Could not locate ${PACKAGE_NAME} from ${binPath}. Set RUN_WAIT_PACKAGE_ROOT.`);
+	console.error(`Could not locate ${PACKAGE_NAME} from ${binPath}. Set PI_JOBS_PACKAGE_ROOT.`);
 	process.exit(1);
 }
 

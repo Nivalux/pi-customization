@@ -71,7 +71,7 @@ function defaultLogPath(command: string): string {
 			.split(/\s+/)[0]
 			?.replace(/[^A-Za-z0-9._-]/g, "")
 			.slice(0, 24) || "job";
-	return join(tmpdir(), "pi-run-wait", scope, `${slug}-${randomBytes(3).toString("hex")}.log`);
+	return join(tmpdir(), "pi-jobs", scope, `${slug}-${randomBytes(3).toString("hex")}.log`);
 }
 
 function spawnJob(input: {
@@ -337,7 +337,7 @@ function describe(details: WaitDetails): string {
 	lines.push(`log ${details.logPath} (${details.outputBytes} bytes)`);
 	if (details.spawnError) lines.push(`spawn error: ${details.spawnError}`);
 	if (details.status !== "exited") {
-		lines.push(`wait_job { "job": "${details.job}" } to keep waiting`);
+		lines.push(`job_wait { "job": "${details.job}" } to keep waiting`);
 	}
 	return lines.join("\n");
 }
@@ -420,7 +420,7 @@ function renderWaitCall(name: string) {
 	return (args: WaitParams | undefined, theme: Theme, context: { lastComponent?: Component }) => {
 		const component = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
 		const maxWait = clampNumber(args?.maxWaitSec, DEFAULT_MAX_WAIT_SEC, MAX_WAIT_SEC_CAP);
-		const subject = name === "wait_job" ? (args?.job ?? "list") : truncate(args?.command ?? "", 60);
+		const subject = name === "job_wait" ? (args?.job ?? "list") : truncate(args?.command ?? "", 60);
 		component.setText(
 			theme.fg("toolTitle", theme.bold(`${name} `)) + theme.fg("muted", `≤${maxWait}s `) + theme.fg("dim", subject),
 		);
@@ -487,7 +487,7 @@ const waitOptions = {
 	),
 	onTimeout: StringEnum(["detach", "kill"] as const, {
 		description:
-			'If the command is still running at the deadline: "detach" (default) leaves it running for wait_job, "kill" terminates the process tree.',
+			'If the command is still running at the deadline: "detach" (default) leaves it running for job_wait, "kill" terminates the process tree.',
 	}),
 };
 
@@ -506,21 +506,21 @@ const runWaitSchema = Type.Object({
 });
 
 const waitJobSchema = Type.Object({
-	job: Type.Optional(Type.String({ description: "Job id returned by run_wait. Omit to list the jobs of this session." })),
+	job: Type.Optional(Type.String({ description: "Job id returned by job_run. Omit to list the jobs of this session." })),
 	...waitOptions,
 });
 
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
-		name: "run_wait",
-		label: "Run and wait",
+		name: "job_run",
+		label: "Run job",
 		description:
-			"Run a shell command in the background; stdout and stderr go to a log file. Returns the moment the command exits, or at maxWaitSec — the wait costs what the command costs. The result carries the last lines of output (≤ 4 KB) and the log path. A command still running at the deadline keeps running; resume it with wait_job.",
+			"Run a shell command in the background; stdout and stderr go to a log file. Returns the moment the command exits, or at maxWaitSec — the wait costs what the command costs. The result carries the last lines of output (≤ 4 KB) and the log path. A command still running at the deadline keeps running; resume it with job_wait.",
 		promptSnippet: "Run a command and return the instant it exits, capped by a max wait; resume waiting by job id",
 		promptGuidelines: [
-			"Use run_wait instead of sleep polling loops or long bash timeouts.",
-			"When run_wait reports status running, call wait_job with the returned job id instead of sleeping in bash.",
-			"Run the command as-is for run_wait: it trims output, so no `| tail`, `| head`, or `| grep`. Read the reported log path when the tail is not enough.",
+			"Use job_run instead of sleep polling loops or long bash timeouts.",
+			"When job_run reports status running, call job_wait with the returned job id instead of sleeping in bash.",
+			"Run the command as-is for job_run: it trims output, so no `| tail`, `| head`, or `| grep`. Read the reported log path when the tail is not enough.",
 			"Use readyPattern to wait for a server or daemon to report readiness; the process keeps running and the result carries its job id.",
 		],
 		parameters: runWaitSchema,
@@ -538,18 +538,18 @@ export default function (pi: ExtensionAPI) {
 			return awaitJob(job, input, signal, onUpdate);
 		},
 
-		renderCall: renderWaitCall("run_wait"),
+		renderCall: renderWaitCall("job_run"),
 		renderResult: renderWaitResult,
 	});
 
 	pi.registerTool({
-		name: "wait_job",
+		name: "job_wait",
 		label: "Wait for job",
 		description:
-			"Continue waiting on a run_wait job: returns on exit, readyPattern match, or maxWaitSec. Omit job to list this session's jobs.",
-		promptSnippet: "Resume waiting on a run_wait job until it exits, capped by a max wait",
+			"Continue waiting on a job_run job: returns on exit, readyPattern match, or maxWaitSec. Omit job to list this session's jobs.",
+		promptSnippet: "Resume waiting on a job_run job until it exits, capped by a max wait",
 		promptGuidelines: [
-			"Use wait_job with the job id from a run_wait result that reported status running, instead of sleeping or re-running the command.",
+			"Use job_wait with the job id from a job_run result that reported status running, instead of sleeping or re-running the command.",
 		],
 		parameters: waitJobSchema,
 
@@ -564,7 +564,7 @@ export default function (pi: ExtensionAPI) {
 			return awaitJob(job, input, signal, onUpdate);
 		},
 
-		renderCall: renderWaitCall("wait_job"),
+		renderCall: renderWaitCall("job_wait"),
 		renderResult: renderWaitResult,
 	});
 
