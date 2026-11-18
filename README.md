@@ -21,18 +21,34 @@ event instead: a 4 second command costs 4 seconds whether `maxWaitSec` is 20 or 
 ## Install
 
 ```bash
+pi install git:github.com/Nivalux/pi-customization
+```
+
+Run `/reload` or start a new session afterwards. To update or remove it later:
+
+```bash
+pi update git:github.com/Nivalux/pi-customization
+pi remove git:github.com/Nivalux/pi-customization
+```
+
+### From a clone
+
+Needed when you want to edit the tools or run the test suite:
+
+```bash
+git clone https://github.com/Nivalux/pi-customization && cd pi-customization
 npm run install:extension     # links extensions/jobs.ts into $PI_CODING_AGENT_DIR/extensions
 npm run uninstall:extension
 ```
 
-Or list it in `~/.pi/agent/settings.json`:
+Or list the file in `~/.pi/agent/settings.json`:
 
 ```json
-{ "extensions": ["/path/to/pi-jobs/extensions/jobs.ts"] }
+{ "extensions": ["/path/to/pi-customization/extensions/jobs.ts"] }
 ```
 
-Or per project: `.pi/extensions/jobs.ts` (the project must be trusted).
-Run `/reload` or start a new session afterwards.
+Or per project: `.pi/extensions/jobs.ts` (the project must be trusted). Either way,
+`/reload` or a new session picks it up.
 
 ## job_run
 
