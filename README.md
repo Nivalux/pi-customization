@@ -100,3 +100,9 @@ npm run test            # 49 checks: early exit, timeout, resume, readyPattern, 
 The test loads the extension through jiti and calls `execute()` directly, with no model call
 involved. `link-modules` resolves the installed package from the `pi` binary; set
 `PI_JOBS_PACKAGE_ROOT` when your install looks different.
+
+## License
+
+Copyright (C) 2026 Nivayu
+
+GPL-2.0-only. See [LICENSE](LICENSE).
