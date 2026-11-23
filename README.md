@@ -110,7 +110,7 @@ id fell out of context.
 ```bash
 npm run link-modules    # link the pi packages into node_modules (types for tsc, jiti for the test)
 npm run typecheck       # tsc against the real pi declarations
-npm run test            # 49 checks: early exit, timeout, resume, readyPattern, process-tree kill, abort, tail caps, renderers
+npm run test            # 56 checks: schema minimality, early exit, timeout, resume, readyPattern, process-tree kill, abort, tail caps, renderers
 ```
 
 The test loads the extension through jiti and calls `execute()` directly, with no model call

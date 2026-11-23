@@ -485,10 +485,12 @@ const waitOptions = {
 			description: `Lines of output in the result. Default ${DEFAULT_TAIL_LINES}; the tail is also capped at ${TAIL_MAX_BYTES / 1024} KB.`,
 		}),
 	),
-	onTimeout: StringEnum(["detach", "kill"] as const, {
-		description:
-			'If the command is still running at the deadline: "detach" (default) leaves it running for job_wait, "kill" terminates the process tree.',
-	}),
+	onTimeout: Type.Optional(
+		StringEnum(["detach", "kill"] as const, {
+			description:
+				'If the command is still running at the deadline: "detach" (default) leaves it running for job_wait, "kill" terminates the process tree.',
+		}),
+	),
 };
 
 const runWaitSchema = Type.Object({

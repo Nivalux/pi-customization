@@ -55,6 +55,20 @@ function pgrep(needle) {
 
 const theme = { fg: (_token, text) => text, bold: (text) => text };
 
+console.log("schemas need nothing beyond the command");
+{
+	const runSchema = runWait.parameters;
+	const waitSchema = waitJob.parameters;
+	check("job_run requires only command", JSON.stringify(runSchema.required) === '["command"]', JSON.stringify(runSchema.required));
+	check("job_wait requires nothing", !waitSchema.required?.length, JSON.stringify(waitSchema.required));
+	check("onTimeout is optional in both", !runSchema.required?.includes("onTimeout") && !waitSchema.required?.includes("onTimeout"));
+	check(
+		"maxWaitSec documents a 60s default",
+		runSchema.properties.maxWaitSec.description.includes("Default 60"),
+		runSchema.properties.maxWaitSec.description,
+	);
+}
+
 console.log("fast exit returns before the max wait");
 {
 	const started = Date.now();
