@@ -498,7 +498,7 @@ const runWaitSchema = Type.Object({
 	output: Type.Optional(
 		Type.String({
 			description:
-				"Path for combined stdout and stderr (directories are created). Default: a temp file, reported in the result.",
+				"Path for combined stdout and stderr (directories are created). Default: a temp file, reported in the result. Use this instead of `> file 2>&1` inside command, which leaves the tool's own log empty.",
 		}),
 	),
 	append: Type.Optional(Type.Boolean({ description: "Append to the output file instead of truncating it." })),
@@ -517,12 +517,13 @@ export default function (pi: ExtensionAPI) {
 		name: "job_run",
 		label: "Run job",
 		description:
-			"Run a shell command in the background; stdout and stderr go to a log file. Returns the moment the command exits, or at maxWaitSec — the wait costs what the command costs. The result carries the last lines of output (≤ 4 KB) and the log path. A command still running at the deadline keeps running; resume it with job_wait.",
+			"Run a shell command in the background; stdout and stderr go to a log file, named by output. Returns the moment the command exits, or at maxWaitSec — the wait costs what the command costs. The result carries the last lines of output (≤ 4 KB) and the log path. A command still running at the deadline keeps running; resume it with job_wait. Write no redirects in command: `> file`, `2>&1`, or a trailing `&` leaves this log empty, so the result has no output and readyPattern never matches.",
 		promptSnippet: "Run a command and return the instant it exits, capped by a max wait; resume waiting by job id",
 		promptGuidelines: [
 			"Use job_run instead of sleep polling loops or long bash timeouts.",
 			"When job_run reports status running, call job_wait with the returned job id instead of sleeping in bash.",
 			"Run the command as-is for job_run: it trims output, so no `| tail`, `| head`, or `| grep`. Read the reported log path when the tail is not enough.",
+			"Never redirect inside a job_run command — no `> file`, `2>&1`, or trailing `&` — because that log stays empty, so the result carries no output and readyPattern never matches. Pass output for a chosen log path, and cwd or env instead of `cd dir &&` or inline `VAR=1`.",
 			"Use readyPattern to wait for a server or daemon to report readiness; the process keeps running and the result carries its job id.",
 		],
 		parameters: runWaitSchema,

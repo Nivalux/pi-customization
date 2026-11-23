@@ -103,6 +103,9 @@ id fell out of context.
   `[… 12.3 KB above — full output in the log]`. Do not pipe commands through `tail`,
   `head`, or `grep` to save context: the tail is already capped, and the pipe shrinks the log too,
   which is the copy that holds everything.
+- **No redirects inside `command`.** `> file 2>&1` sends the output past the tool: its own log stays
+  empty, the result carries no tail, and `readyPattern` never matches. Pass `output` for a chosen log
+  path, and `cwd`/`env` instead of `cd dir &&` or inline `VAR=1`.
 - **Logs are never deleted.** `$TMPDIR/pi-jobs/` grows one file per job per session.
 
 ## Development
