@@ -79,12 +79,13 @@ normal result so the agent can still read the log.
 ## job_wait
 
 ```
-job_wait { "job": "a1b2c3", "maxWaitSec": 300 }
+job_wait { "job": "a1b2c3" }
+job_wait { "job": "a1b2c3", "maxWaitSec": 300, "onTimeout": "kill" }
 ```
 
-Attaches to an existing job id with the same `maxWaitSec`/`readyPattern`/`tailLines`/
-`onTimeout`. Omit `job` to list every job in the session, which is what to do when the job
-id fell out of context.
+The job id alone is a complete call: `maxWaitSec`, `readyPattern`, `tailLines` and `onTimeout`
+take the same defaults as `job_run`. Omit `job` to list every job in the session, which is what
+to do when the job id fell out of context.
 
 ## Behaviour worth knowing
 
@@ -113,7 +114,7 @@ id fell out of context.
 ```bash
 npm run link-modules    # link the pi packages into node_modules (types for tsc, jiti for the test)
 npm run typecheck       # tsc against the real pi declarations
-npm run test            # 56 checks: schema minimality, early exit, timeout, resume, readyPattern, process-tree kill, abort, tail caps, renderers
+npm run test            # 60 checks: schema minimality, early exit, timeout, resume, readyPattern, process-tree kill, abort, tail caps, renderers
 ```
 
 The test loads the extension through jiti and calls `execute()` directly, with no model call

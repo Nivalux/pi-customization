@@ -177,6 +177,17 @@ console.log("job_wait waits out a short job");
 	check("output visible on resume", second.content[0].text.includes("done"));
 }
 
+console.log("job_wait needs nothing but the job id");
+{
+	const first = await runWait.execute("t20", { command: "sleep 2; echo bye", maxWaitSec: 1 }, undefined, undefined, ctx);
+	const started = Date.now();
+	const second = await waitJob.execute("t21", { job: first.details.job }, undefined, undefined, ctx);
+	check("waited without maxWaitSec", second.details.status === "exited", second.details.status);
+	check("default max wait applied", second.details.maxWaitSec === 60, String(second.details.maxWaitSec));
+	check("returned the moment it exited", Date.now() - started < 1900, `${Date.now() - started}ms`);
+	check("output visible", second.content[0].text.includes("bye"));
+}
+
 console.log("readyPattern returns while the process keeps running");
 {
 	const logPath = join(dir, "server.log");
